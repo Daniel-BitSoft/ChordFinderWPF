@@ -1,0 +1,19 @@
+﻿<Window x:Class="ChordFinderWPF.VisualFingering"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="VisualFingering" Height="500" Width="1000" WindowStartupLocation="CenterScreen" WindowState="Maximized">
+    <Grid>
+        <FlowDocumentReader VerticalAlignment="Stretch" Margin="0,0,0,0">
+            <FlowDocumentReader.Resources>
+                <Style TargetType="TableCell">
+                    <Setter Property="TextAlignment" Value="Center"/>
+                </Style>
+            </FlowDocumentReader.Resources>
+            <FlowDocument Name="doc1" ColumnWidth="200">
+            </FlowDocument>
+        </FlowDocumentReader>
+        <Grid VerticalAlignment="Bottom" >
+            <Label Name="TotalLbl" Content="" FontSize="14" Height="28" HorizontalAlignment="Left" Margin="10,10,0,25" VerticalAlignment="Top" />
+        </Grid>
+        </Grid>
+</Window>
