@@ -20,27 +20,23 @@ namespace ChordFinderWPF
     public partial class MainWindow : Window
     {
         int[] Pitches;
-        List<int[]> FinalFingering = new List<int[]>();
         List<string> Solutions = new List<string>();
+        List<string> FinalSolutions = new List<string>();
         int Min, Max;
         int[] Strings = new int[6];
-        string[] Chrd;
+        //string[] Chrd;
         int[] c;
+        List<int[]> FingerPositions;
 
         public MainWindow()
         {
             InitializeComponent();
-            ChordsComboBox.SelectedIndex = 0;
-        }
-
-        private void button1_Click(object sender, RoutedEventArgs e)
-        {
-            GetAllSets();
         }
 
         private void GetAllSets()
         {
             List<int[]> Sets = new List<int[]>();
+            FingerPositions = new List<int[]>();
 
             for (int i = 1; i <= 4; i++)
             {
@@ -75,103 +71,72 @@ namespace ChordFinderWPF
                 }
             }
 
-            string Output = string.Empty;
-            string FingerPositions = string.Empty;
-
-            
-
             foreach (int[] a in Sets)
             {
-                string[] permutations = GetPermutation(a);
-                Output += permutations[0];
-
-                FingerPositions += permutations[1];
+                List<int[]> permutations = GetPermutation(a);
+                FingerPositions.AddRange(permutations.Select(b => b));
             }
-
-            textBox2.Text = Output;
-            textBox3.Text = FingerPositions;
-
         }
 
-        private string[] GetPermutation(int[] inputSet)
+        private List<int[]> GetPermutation(int[] inputSet)
         {
-            string[] output = new string[2];
             Permutation rec = new Permutation();
             rec.Pitches = Pitches;
             rec.InputSet = inputSet;
-            rec.Output = string.Empty;
+            rec.Output2 = new List<int[]>();
             rec.CalcPermutation(0);
-            output[0] = rec.Output;
-            output[1] = rec.Output2;
-            return output;
+            return rec.Output2;
         }
 
-        private void button2_Click(object sender, RoutedEventArgs e)
+        private void TreeFiltering()
         {
-            string[] Fingering = textBox3.Text.Substring(0, textBox3.Text.LastIndexOf('\t')).Split('\t');
-            List<int[]> Fingerings = new List<int[]>();
+            if (FingerPositions.Count == 0)
+                return;
 
-            for (int i = 0; i < Fingering.Length; i++)
+            Solutions.Clear();
+            List<int[]> FinalFingering = new List<int[]>();
+
+            for (int i = 0; i < FingerPositions.Count; i++)
             {
-                string[] a = Fingering[i].Split(',');
-                int[] b = new int[6];
-                b[0] = Convert.ToInt32(a[0]);
-                b[1] = Convert.ToInt32(a[1]);
-                b[2] = Convert.ToInt32(a[2]);
-                b[3] = Convert.ToInt32(a[3]);
-                b[4] = Convert.ToInt32(a[4]);
-                b[5] = Convert.ToInt32(a[5]);
-
-                Fingerings.Add(b);
-            }
-
-            for (int i = 0; i < Fingerings.Count; i++)
-            {
-                if (Fingerings[i].Count(b => b == 0) == 2 && Fingerings[i].Contains(5) && Fingerings[i].Contains(3) && Fingerings[i].Contains(2) && Fingerings[i].Contains(0) && Fingerings[i].Contains(-1))
+                var list = FingerPositions[i].Where(a => a != -1 && a != 0).ToList();
+                if (list.Count > 0)
                 {
-                    int[] val = Fingerings[i];
+                    var SortedList = list.OrderBy(a => a).ToList();
+
+                    // To filter those fingerings where the distance of first frett and last frett are less and equal to selected distance using ComboBox
+                    if ((SortedList[SortedList.Count - 1] - SortedList[0]) <= (Convert.ToInt32(FingerDistanceComboBx.Text) - 1) && (FingerPositions[i].Count(a => a == -1) <= 2))
+                        FinalFingering.Add(FingerPositions[i]);
                 }
-                List<int> SortedList = Fingerings[i].Where(a => a != -1 && a != 0).OrderBy(a => a).ToList();
-                if (SortedList[SortedList.Count - 1] - SortedList[0] <= 3)
-                    FinalFingering.Add(Fingerings[i]);
             }
 
             //=============================================
-            //TreeNode Root = new TreeNode(null, 0, 0);
-            //Root.Values = Fingerings;
-            //CreateTree(0, 0, Root);
 
             string fingerings = string.Empty;
             foreach (int[] c in FinalFingering)
             {
-                // if (!fingerings.Contains(c[0] + "," + c[1] + "," + c[2] + "," + c[3] + "," + c[4] + "," + c[5]))
                 fingerings += c[0] + "," + c[1] + "," + c[2] + "," + c[3] + "," + c[4] + "," + c[5] + "\t";
             }
 
             string[] fings = fingerings.Substring(0, fingerings.LastIndexOf('\t')).Split('\t');
             List<string> final = fings.Distinct().ToList();
-            foreach (string s in final)
-                textBox4.Text += s + '\t';
 
             for (int j = 0; j < FinalFingering.Count; j++)
             {
                 c = FinalFingering[j];
 
-                //if (c[0] == 0 && c[1] == 5 && c[2] == 0 && c[3] == 2 && c[4] == 3 && c[5] == -1)
-                //{ }
-                //if (c.Count(b => b == 0) == 2 && c.Contains(5) && c.Contains(3) && c.Contains(2) && c.Contains(0) && c.Contains(-1))
-                //{ }
-
-                Chrd = new string[] { c[0].ToString(), c[1].ToString(), c[2].ToString(), c[3].ToString(), c[4].ToString(), c[5].ToString() };
                 // Getting min which is not -1 or 0
                 int index = 0;
                 Min = c.OrderBy(a => a).ToList()[index];
+
                 while (Min <= 0)
                     Min = c.OrderBy(a => a).ToList()[index++];
+
                 Max = c.OrderBy(a => a).ToList()[5];
+
                 int PitchNeedFinger = c.Count(a => a > 0);
                 Strings[0] = Strings[1] = Strings[2] = Strings[3] = Strings[4] = Strings[5] = 0;
                 int MinCount = c.Count(a => a == Min);
+
                 if (MinCount > 1)   // There are two or more positions on same fret - Using one finger to hold all positions
                 {
                     Node root = new Node();
@@ -214,7 +179,7 @@ namespace ChordFinderWPF
                 }
 
                 //===============================================================
-                // You need to change all variables to their default values because the following is a new tree
+                // Changing all variables to their default values because the following is a new tree
                 Strings[0] = Strings[1] = Strings[2] = Strings[3] = Strings[4] = Strings[5] = 0;
                 Node root2 = new Node();
                 root2.Fret = Min;
@@ -236,34 +201,9 @@ namespace ChordFinderWPF
                         CreateSmallTree(root2, 3, PitchNeedFinger - 1, i - 1);
                     }
                 }
-
             }
 
-            foreach (string b in Solutions)
-            {
-                textBox5.Text += b + '\t';
-            }
-
-            var OrderedSolutions = Solutions.OrderBy(a => Convert.ToInt32(a.Split('/').Where(b => b.Split(',')[0] != "-1" && b.Split(',')[0] != "0").Last().Split(',')[0])).ToList();
-
-            VisualFingering vf = new VisualFingering(OrderedSolutions);
-            vf.ShowDialog();
-
-            //foreach (string b in Solutions)
-            //{
-            //    string[] finger = b.Split('/');
-                
-            //}
-
-            //for (int k = 0; k < (Solutions.Count / 10) + 1; k++)
-            //{
-            //    for (int M = 0; M < 10; M++)
-            //    {
-            //        DataGridColumn col = new DataGridTemplateColumn();
-            //        vf.MainGrid.Columns.Add(col);
-            //    }
-            //    //vf.MainGrid.Items.Add();
-            //}
+            DrawTab();
         }
 
         private void CreateSmallTree(Node TreeNode, int RemainingFingers, int PitchNeedFinger, int stringNo)
@@ -275,13 +215,13 @@ namespace ChordFinderWPF
             {
                 for (int i = stringNo; i >= 0; i--)
                 {
-                    if (Chrd[i] == (fret).ToString())
+                    if (c[i] == fret)
                     {
-                        positions.Add(Chrd[i] + "," + i.ToString());   // Like x,y in cartesian
+                        positions.Add(c[i] + "," + i.ToString());   // Like x,y in cartesian
                         Node node = new Node();
                         node.Fret = fret;
                         node.finger = TreeNode.finger + 1;
-                        node.FingerPosition = new string[] { Chrd[i] + "," + i.ToString() };
+                        node.FingerPosition = new string[] { c[i] + "," + i.ToString() };
                         TreeNode.Children.Add(node);
                         node.Parent = TreeNode;
 
@@ -370,8 +310,64 @@ namespace ChordFinderWPF
             }
 
             solution = solution.Substring(0, solution.LastIndexOf("/"));
+
+
+
             if (!Solutions.Contains(solution))
-                Solutions.Add(solution);
+            {
+                // if rich filter selected
+                if (RichCombo.SelectedIndex == 1 && Solutions.Count > 0)
+                {
+                    // List<string> DeleteList = new List<string>();
+                    //for (int i = 0; i < Solutions.Count; i++)
+                    //{
+                    var a = solution.Split('/').Where(b => !b.Contains("-1")).ToList();
+                    //bool IsContained = false;
+                    List<string> same = Solutions.Where(c => c.Contains(a[0])).ToList();
+
+                    for (int j = 1; j < a.Count; j++)
+                    {
+                        same = same.Where(c => c.Split('/').Contains(a[j])).ToList();
+                    }
+
+                    //int maxIndex = -1;
+                    if (same.Count > 1)
+                    {
+                        foreach (string s in same)
+                        {
+                            if (s.Split('/').Where(c => !c.Contains("-1")).Count() < a.Count)
+                            {
+                                if (!Solutions.Contains(solution)) // To prevent from adding multiple times in foreach
+                                {
+                                    Solutions.Add(solution);
+                                }
+                                Solutions.Remove(s);
+                            }
+                        }
+
+                    }
+
+                    //for (int index = 0; index < same.Count; index++)
+                    ////{
+                    else if (same.Count == 1)
+                    {
+                        var selected = same[0].Split('/').Where(b => !b.Contains("-1")).ToList();
+                        if (selected.Count < a.Count)
+                        {
+                            Solutions.Add(solution);
+                            Solutions.Remove(same[0]);
+                        }
+                    }
+                    else
+                        Solutions.Add(solution);
+                    //}
+                    // }
+                    //foreach (string s in DeleteList)
+                    //    Solutions.Remove(s);
+                }
+                else
+                    Solutions.Add(solution);
+            }
         }
 
         private bool CheckBarreIsLegal(List<string> positions, int fret)
@@ -396,7 +392,7 @@ namespace ChordFinderWPF
 
                 for (int i = 0; i < 6; i++)
                 {
-                    if (Chrd[i] == fret.ToString())
+                    if (c[i] == fret)
                     {
                         if (i < min)
                             min2 = i;
@@ -415,7 +411,6 @@ namespace ChordFinderWPF
 
         private void comboBox1_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            GetSetOfPitches();
         }
 
         private void GetSetOfPitches()
@@ -428,8 +423,7 @@ namespace ChordFinderWPF
             else if (Convert.ToBoolean(MinorRadio.IsChecked))
                 major = false;
 
-            Pitches = chords.CreateSetOfPitches(major, ChordsComboBox.Text);
-            textBox1.Text = Pitches[0] + "-" + Pitches[1] + "-" + Pitches[2];
+            Pitches = chords.CreateSetOfPitches(major, (ChordsComboBox.SelectedItem as ComboBoxItem).Content.ToString());
         }
 
         private void button3_Click(object sender, RoutedEventArgs e)
@@ -455,12 +449,168 @@ namespace ChordFinderWPF
                         MessageBox.Show(found);
                     }
                 }
-
-                
-                //5,1,3/3,4,2/2,3,1/0,0/0,2/-1,5
-
             }
         }
 
+        private void DrawTab()
+        {
+            FlowDocument doc1 = new FlowDocument();
+            doc1.ColumnWidth = 180;
+            FlowDocReader.Document = null;
+            FlowDocReader.Document = doc1;
+            FlowDocReader.Zoom = 40;
+            
+            Chords chrd = new Chords();
+
+            TotalLbl.Content = "Results Found: " + Solutions.Count + "  -  Set of Notes: " + chrd.AllChords[Pitches[0]] + "-" + chrd.AllChords[Pitches[1]] + "-" + chrd.AllChords[Pitches[2]];
+
+            List<Paragraph> content = new List<Paragraph>();
+
+            // if re-order based on difficulty
+            if (OrderCombo.SelectedIndex == 1)
+                ReOrder();
+            else
+                FinalSolutions = Solutions.OrderBy(a => Convert.ToInt32(a.Split('/').Where(b => b.Split(',')[0] != "-1" && b.Split(',')[0] != "0").Last().Split(',')[0])).ToList();
+
+
+            for (int k = 0; k < FinalSolutions.Count; k++)
+            {
+                Figure fig = new Figure();
+                fig.CanDelayPlacement = false;
+                // Create Table ...
+                Table tbl = new Table();
+                tbl.FontSize = 14;
+                tbl.Background = new ImageBrush
+                {
+                    Stretch = Stretch.Fill,
+                    ImageSource =
+                      new BitmapImage(
+                        new Uri(@"pack://application:,,,/Images/ChordBG.png", UriKind.RelativeOrAbsolute)
+                      )
+                };
+
+                tbl.CellSpacing = 2;
+
+                tbl.Margin = new Thickness(0, 0, 0, 0);
+                // tbl.Background = new Brush("Images/ChordBG.png");
+                for (int x = 0; x < 7; x++)
+                {
+                    tbl.Columns.Add(new TableColumn());
+                    tbl.Columns[tbl.Columns.Count - 1].Width = new GridLength(23);
+                }
+                tbl.Columns[0].Width = new GridLength(18);
+                // Create and add an empty TableRowGroup to hold the table's Rows.
+                tbl.RowGroups.Add(new TableRowGroup());
+                // Add the first (title) row.
+                for (int i = 0; i < 7; i++)
+                {
+                    TableRow currentRow = new TableRow();
+                    tbl.RowGroups[0].Rows.Add(currentRow);
+
+                    for (int j = 0; j < 7; j++)
+                    {
+                        TableCell cell = new TableCell();
+                        currentRow.Cells.Add(cell);
+                        cell.BorderThickness = new Thickness(0);
+                        cell.Padding = new Thickness(0, 0, 0, 0);
+                    }
+                }
+
+                // Fill table with fingering values
+                string[] vals = FinalSolutions[k].Split('/');
+                string b = vals.Where(a => !a.Contains("-1") && a.Split(',')[0] != "0").Last();
+                int MinFrett = Convert.ToInt32(b.Split(',')[0]);
+
+                // Showing the starting Frett
+                Paragraph paragraph2 = new Paragraph();
+                paragraph2.Inlines.Add(new Run(MinFrett.ToString()));
+                tbl.RowGroups[0].Rows[1].Cells[0].Blocks.Add(paragraph2);
+
+                // Showing finger positions
+                for (int i = 0; i < vals.Length; i++)
+                {
+                    string[] points = vals[i].Split(',');
+                    if (points.Length == 2)
+                    {
+                        int ColumnIndex = Math.Abs(Convert.ToInt32(points[1]) - 6);
+                        if (points[0] == "-1")
+                        {
+                            Paragraph paragraph = new Paragraph();
+                            paragraph.Inlines.Add(new Run("X"));
+                            tbl.RowGroups[0].Rows[0].Cells[ColumnIndex].Blocks.Add(paragraph);
+                        }
+                        else
+                        {
+                            Paragraph paragraph = new Paragraph();
+                            paragraph.Inlines.Add(new Run("O"));
+                            tbl.RowGroups[0].Rows[0].Cells[ColumnIndex].Blocks.Add(paragraph);
+                        }
+                    }
+                    else
+                    {
+                        int RowIndex = Convert.ToInt32(points[0]) - MinFrett + 1;
+                        int ColumnIndex = Math.Abs(Convert.ToInt32(points[1]) - 6);
+
+                        Paragraph paragraph = new Paragraph();
+                        paragraph.Inlines.Add(new Run(points[2]));
+                        tbl.RowGroups[0].Rows[RowIndex].Cells[ColumnIndex].Blocks.Add(paragraph);
+
+                    }
+                }
+
+                fig.Blocks.Add(tbl);
+                Paragraph MainParagh = new Paragraph(fig);
+                doc1.Blocks.Add(MainParagh);
+                //content.Add(MainParagh);
+
+            }
+
+            //doc1.Blocks.AddRange(content);
+        }
+
+        private void ReOrder()
+        {
+            Dictionary<string, int> OrderedSolutions = new Dictionary<string, int>();
+
+            foreach (string Sol in Solutions)
+            {
+                var a = Sol.Split('/').Where(b => b.Split(',').Length > 2).ToList();
+                int FrettCount = a.Select(c => c.Split(',')[0]).Distinct().Count();
+                int StringCount = a.Select(c => c.Split(',')[1]).Distinct().Count();
+                int FingerCount = a.Select(c => c.Split(',')[2]).Distinct().Count();
+
+                int Difficulty = FrettCount + StringCount + FingerCount;
+                OrderedSolutions.Add(Sol, Difficulty);
+            }
+
+            FinalSolutions = OrderedSolutions.OrderBy(c => c.Value).ThenBy(d => Convert.ToInt32(d.Key.Split('/').Where(b => b.Split(',')[0] != "-1" && b.Split(',')[0] != "0").Last().Split(',')[0])).Select(a => a.Key).ToList();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void MinorRadio_Click(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void MajorRadio_Click(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void FingerDistanceComboBx_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+        }
+
+        private void button1_Click(object sender, RoutedEventArgs e)
+        {
+            if (ChordsComboBox.SelectedItem != null && FingerDistanceComboBx.SelectedItem != null)
+            {
+                GetSetOfPitches();
+                GetAllSets();
+                TreeFiltering();
+            }
+        }
     }
 }

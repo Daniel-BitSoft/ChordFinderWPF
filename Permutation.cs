@@ -11,8 +11,7 @@ namespace ChordFinderWPF
         private int numberOfElements = 6;
         private int[] permutationValue = new int[6];
         public int[] Pitches = new int[3];
-        //public List<string> Output = new List<string>();
-        public string Output, Output2;
+        public List<int[]> Output2;
 
         private int[] inputSet;
         public int[] InputSet
@@ -62,14 +61,16 @@ namespace ChordFinderWPF
             }
             a = a.Substring(0, a.Length - 1);
             if (a.Contains(Pitches[0].ToString()) && a.Contains(Pitches[1].ToString()) && a.Contains(Pitches[2].ToString()))
-                if (!Output.Contains(a))
-                {
-                    int[] FingerPlace = GS.GetFingerPlace(a);
-                    Output2 += FingerPlace[0] + "," + FingerPlace[1] + "," + FingerPlace[2] + "," + FingerPlace[3] + "," +
-                        FingerPlace[4] + "," + FingerPlace[5] + "\t";
-
-                    Output += a + "\t";
-                }
+            {
+                int[] FingerPlace = GS.GetFingerPlace(a);
+                if (FingerPlace[0] == -1 && FingerPlace[1] == 0 && FingerPlace[2] == 0 && FingerPlace[3] == 0 && FingerPlace[4] == -1 && FingerPlace[5] == -1)
+                { }
+                if (!Output2.Contains(FingerPlace))
+                    //FingerPlace[0] + "," + FingerPlace[1] + "," + FingerPlace[2] + "," + FingerPlace[3] + "," + FingerPlace[4] + "," + FingerPlace[5]))
+                    Output2.Add(FingerPlace);
+                        //FingerPlace[0] + "," + FingerPlace[1] + "," + FingerPlace[2] + "," + FingerPlace[3] + "," +
+                       // FingerPlace[4] + "," + FingerPlace[5] + "\t";
+            }
 
             PermutationCount++;
         }

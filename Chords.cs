@@ -7,7 +7,7 @@ namespace ChordFinderWPF
 {
     class Chords
     {
-        Dictionary<int, string> AllChords = new Dictionary<int, string>();
+        public Dictionary<int, string> AllChords = new Dictionary<int, string>();
         public int[] SetOfPitches = new int[3];
 
         public Chords()
